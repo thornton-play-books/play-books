@@ -68,11 +68,11 @@ library(crosstalk)
 atb_homes <- 
   tribble(~place_id, ~category, ~about,
     "Hips_022", "home", "Alice Thornton lived at Hipswell Hall, her mother's jointure property, from 1644 to 1660.",
-    "Kirk_131", "home", "Alice Thornton was born at Kirklington Hall.",
+    "Kirk_131", "home", "Alice Thornton was born at Kirklington Hall in 1626.",
     "Snap_047", "home", "Alice Thornton lived at Snape with her sister Katherine Danby for several months between 1643 and 1644.",
     "StNi_050", "home", "St Nicholas was the home of Alice Thornton's beloved aunt, Anne Norton. She often stayed with the Nortons in Richmond.",
     "Oswa_041", "home", "Alice Thornton lived with her family at Oswaldkirk between 1660 and 1662 while the Thorntons' new house at East Newton was being built.",
-    "East_019", "home", "The Thornton family moved to their newly-built home at East Newton in summer 1662."
+    "East_019", "home", "The Thornton family moved to their newly-built home at East Newton in summer 1662. Alice Thornton lived here until her death in 1707."
     ) 
   #enframe(value = "place_id") |>
  # mutate(category="home")
