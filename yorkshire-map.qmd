@@ -11,13 +11,13 @@ execute:
 This map and linked data are early work in progress for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/).
 The map shows places in Yorkshire that were mentioned by Alice Thornton in her *Books*. 
 
-Red pins mark places where Thornton lived for significant periods. Hover over pins to see place name labels. The table below the map provides links to related material in a number of online resources.
+Red pins mark places where Thornton lived for significant periods during her life. Hover over any pins to see a basic place name label; click/tap on red pins for extra information. The table below the map provides links to related material in a number of online resources. 
 
 To filter place names click/tap in the **Find places** box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.
 
 Or click on the **make a selection** button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.
 
-(You can also highlight a single place by clicking on the place name in the table (click again to reset) but note that a limitation of the map is that it will not automatically move to show the highlighted place.)
+(You can also highlight a single place by clicking on the place name in the table (click again to reset) but please note that the map will not automatically move to show the highlighted place.)
 
 
 ```{r}
@@ -64,9 +64,16 @@ library(crosstalk)
 
 # list of places where AT lived
 atb_homes <- 
-  c("Hips_022", "Kirk_131", "Snap_047", "StNi_050", "Oswa_041", "East_019") |>
-  enframe(value = "place_id") |>
-  mutate(category="home")
+  tribble(~place_id, ~category, ~about,
+    "Hips_022", "home", "Alice Thornton lived at Hipswell Hall, her mother's jointure property, from 1644 to 1660.",
+    "Kirk_131", "home", "Alice Thornton was born at Kirklington Hall.",
+    "Snap_047", "home", "Alice Thornton lived at Snape with her sister Katherine Danby for several months between 1643 and 1644.",
+    "StNi_050", "home", "St Nicholas was the home of Alice Thornton's beloved aunt, Anne Norton. She often stayed with the Nortons in Richmond.",
+    "Oswa_041", "home", "Alice Thornton lived with her family at Oswaldkirk between 1660 and 1662 while the Thorntons' new house at East Newton was being built.",
+    "East_019", "home", "The Thornton family moved to their newly-built home at East Newton in summer 1662."
+    ) 
+  #enframe(value = "place_id") |>
+ # mutate(category="home")
 
 
 # replaced with new version on teams [230710.] will need to make combi lat/long which isn't in new version.
@@ -91,7 +98,7 @@ atb_yorkshire <-
 atb_places_wikidata_xlsx |>
   filter(str_detect(region, "Yorkshire") & level!="region") |>
   mutate(lat=as.numeric(lat), long=as.numeric(long)) |>
-  left_join(atb_homes |> select(place_id, category), by="place_id") |>
+  left_join(atb_homes |> select(place_id, category, about), by="place_id") |>
   mutate(category = if_else(!is.na(category), category, "other"))
 
 
@@ -141,7 +148,7 @@ atb_yorkshire |>
     glue('<a href="{wd_item}" target="_blank">', '{wikidata} {wd_itemLabel}', '</a>') , 
     NA )
   ) |>
-  select(place_id, address, wikipedia, natHeritage, visionBritain, bhoVCH, wikidata, lat, long, category)
+  select(place_id, address, wikipedia, natHeritage, visionBritain, bhoVCH, wikidata, lat, long, category, about)
 
 ## for crosstalk
 shared_yorkshire <- SharedData$new(atb_yorkshire_table_links, ~place_id)
@@ -240,14 +247,14 @@ bscols(widths = c(12,12,12),
     addTiles() |> 
     addAwesomeMarkers(lat = ~lat, lng=~long, 
                       label = ~address, 
-                      #popup = ~category,  # yes you can have both label and popup
+                      popup = ~about,  # yes you can have both label and popup
                       icon=icons),
   
   datatable(shared_yorkshire,
           width = "100%", height="500", # height seems to make no difference on web page, only in preview ???
           escape = FALSE, # need this to make <a> stuff work...
           options = list(
-            columnDefs = list(list(visible=FALSE, targets=c("place_id", "lat", "long", "category")) ), # hide named columns
+            columnDefs = list(list(visible=FALSE, targets=c("place_id", "lat", "long", "category", "about")) ), # hide named columns
             pageLength=80, # enough to show everything on one page
             dom='t' # show only table this hides search (confusing) as well as pagination stuff (not needed if single page). 
           ),
