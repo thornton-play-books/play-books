@@ -9,13 +9,15 @@ execute:
 
 
 This map and linked data are early work in progress for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/).
-The map shows places in Yorkshire that were mentioned by Alice Thornton in her *Books*. 
 
-Red pins mark places where Thornton lived for significant periods during her life. Hover over any pins to see a basic place name label; click/tap on red pins for extra information. The table below the map provides links to related material in a number of online resources. 
+The map shows places in Yorkshire that were mentioned by Alice Thornton in her *Books*. The table below the map provides links to related material in a number of online resources. 
 
-To filter place names click/tap in the **Find places** box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.
+Hover over any pin to see a basic place name label. Red pins mark places where Thornton lived for significant periods during her life; click/tap on them for extra information. 
 
-Or click on the **make a selection** button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.
+To filter place names
+
+- click/tap in the **Find places** box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.
+- or click on the **make a selection** button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.
 
 (You can also highlight a single place by clicking on the place name in the table (click again to reset) but please note that the map will not automatically move to show the highlighted place.)
 
