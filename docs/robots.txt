@@ -1,1 +1,1 @@
-Sitemap: https://thornton-play-books.github.io/sitemap.xml
+Sitemap: https://thornton-play-books.github.io/play-books/sitemap.xml
