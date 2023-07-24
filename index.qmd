@@ -2,6 +2,7 @@
 title: "Playing with Thornton's Books"
 ---
 
-Experiments.
+Some experiments with data created by the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/).
 
 
+[Mapping Alice Thornton's Yorkshire](yorkshire-map.html)
