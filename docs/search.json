@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "Playing with Thornton’s Books",
     "section": "",
-    "text": "Experiments."
+    "text": "Some experiments with data created by the Alice Thornton’s Books project.\nMapping Alice Thornton’s Yorkshire"
   },
   {
     "objectID": "about.html",
@@ -12,5 +12,12 @@
     "title": "About",
     "section": "",
     "text": "About this site\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "yorkshire-map.html",
+    "href": "yorkshire-map.html",
+    "title": "Mapping Alice Thornton’s Books: Yorkshire",
+    "section": "",
+    "text": "This map and linked data are early work in progress for the Alice Thornton’s Books project. The map shows places in Yorkshire that were mentioned by Alice Thornton in her Books.\nRed pins mark places where Thornton lived for significant periods. Hover over pins to see place name labels. The table below the map provides links to related material in a number of online resources.\nTo filter place names click/tap in the Find places box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.\nOr click on the make a selection button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.\n(You can also highlight a single place by clicking on the place name in the table (click again to reset) but note that a limitation of the map is that it will not automatically move to show the highlighted place.)\n\n\n\n\n\n\n\nFind places"
   }
 ]
