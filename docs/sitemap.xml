@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://thornton-play-books.github.io/index.html</loc>
-    <lastmod>2023-07-24T07:44:28.303Z</lastmod>
-  </url>
-  <url>
-    <loc>https://thornton-play-books.github.io/about.html</loc>
-    <lastmod>2023-07-24T07:44:27.800Z</lastmod>
-  </url>
-  <url>
     <loc>https://thornton-play-books.github.io/play-books/index.html</loc>
-    <lastmod>2023-07-24T08:57:02.774Z</lastmod>
+    <lastmod>2023-07-24T09:46:04.178Z</lastmod>
+  </url>
+  <url>
+    <loc>https://thornton-play-books.github.io/play-books/about.html</loc>
+    <lastmod>2023-07-24T09:46:05.559Z</lastmod>
   </url>
   <url>
     <loc>https://thornton-play-books.github.io/play-books/yorkshire-map.html</loc>
-    <lastmod>2023-07-24T08:57:22.038Z</lastmod>
+    <lastmod>2023-07-24T09:46:07.708Z</lastmod>
   </url>
 </urlset>

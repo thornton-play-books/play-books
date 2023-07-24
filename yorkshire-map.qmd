@@ -1,0 +1,262 @@
+---
+title: "Mapping Alice Thornton's Books: Yorkshire"
+author: "Sharon Howard"
+execute: 
+  message: false
+  warning: false
+  echo: false
+---
+
+
+This map and linked data are early work in progress for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/).
+The map shows places in Yorkshire that were mentioned by Alice Thornton in her *Books*. 
+
+Red pins mark places where Thornton lived for significant periods. Hover over pins to see place name labels. The table below the map provides links to related material in a number of online resources.
+
+To filter place names click/tap in the **Find places** box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.
+
+Or click on the **make a selection** button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.
+
+(You can also highlight a single place by clicking on the place name in the table (click again to reset) but note that a limitation of the map is that it will not automatically move to show the highlighted place.)
+
+
+```{r}
+# a look at Yorkshire places in particular to see what improvements might be needed
+# 
+# Q: what to do about places that don't have a wikidata page?
+# 
+
+library(readxl)
+library(readtext)
+library(janitor)
+library(lubridate)
+library(scales)
+
+library(tidytext)
+library(tidyverse)
+
+library(glue)
+
+library(leaflet)
+
+
+library(DT)
+# https://rstudio.github.io/DT/
+ # datatable(data, options = list(), class = "display",
+ #    callback = JS("return table;"), rownames, colnames, container,
+ #    caption = NULL, filter = c("none", "bottom", "top"), escape = TRUE,
+ #    style = "auto", width = NULL, height = NULL, elementId = NULL,
+ #    fillContainer = getOption("DT.fillContainer", NULL),
+ #    autoHideNavigation = getOption("DT.autoHideNavigation", NULL),
+ #    selection = c("multiple", "single", "none"), extensions = list(),
+ #    plugins = NULL, editable = FALSE)
+
+#styling options https://datatables.net/manual/styling/classes
+
+library(crosstalk)
+
+ 
+#library(reactable)
+```
+
+
+```{r}
+
+# list of places where AT lived
+atb_homes <- 
+  c("Hips_022", "Kirk_131", "Snap_047", "StNi_050", "Oswa_041", "East_019") |>
+  enframe(value = "place_id") |>
+  mutate(category="home")
+
+
+# replaced with new version on teams [230710.] will need to make combi lat/long which isn't in new version.
+# atb_places_wikidata_v230707_xlsx <-
+#   read_excel(here::here("outputs", "places", "atb_places_wikidata_v20230707.xlsx")) |>
+#   arrange(settlement)
+
+atb_places_wikidata_xlsx <-
+  read_excel("/Users/vanity/Library/CloudStorage/OneDrive-UniversityofEdinburgh/General/Ographies/atb_places_v20230710.xlsx") |>
+## add nls coords for the ones where wikidata isn't quite right...
+  mutate(lat = case_when(
+    !is.na(nls_lat) ~ nls_lat,
+    .default = wd_lat
+  )) |>
+  mutate(long = case_when(
+    !is.na(nls_long) ~ nls_long,
+    .default = wd_long
+  ))
+
+    
+atb_yorkshire <-
+atb_places_wikidata_xlsx |>
+  filter(str_detect(region, "Yorkshire") & level!="region") |>
+  mutate(lat=as.numeric(lat), long=as.numeric(long)) |>
+  left_join(atb_homes |> select(place_id, category), by="place_id") |>
+  mutate(category = if_else(!is.na(category), category, "other"))
+
+
+# atb_places_wikidata_v230707_xlsx |>
+#   filter(!level %in% c("country", "region")) |> 
+#   filter(wd_histcounty=="Yorkshire" | str_detect(address, "Yorkshire")) |>
+#   filter(is.na(wd_article) & is.na(wd_natheritage)) |>
+#   relocate(wd_bho, wd_histeng)
+
+
+
+
+# i think possible to write a transformer with glue so you don't need if_else but even like this it's still clearer than pasting...
+atb_yorkshire_table_links <-
+atb_yorkshire |>
+  mutate(wd_article_name = str_remove(wd_article, "https://en.wikipedia.org/wiki/")) |>
+  mutate(wd_article_name = str_replace_all(wd_article_name, "_", " ")) |>
+  mutate(wikipedia = if_else(
+    !is.na(wd_article),
+    glue('<a href="{wd_article}" target="_blank">', '{wd_article_name}', '</a>') , 
+    NA )
+  )  |>
+  mutate(natHeritage = if_else(
+    !is.na(wd_natheritage),
+    glue('<a href="https://www.historicengland.org.uk/listing/the-list/list-entry/{wd_natheritage}" target="_blank">', '{wd_natheritage}', '</a>') , 
+    NA )
+  )  |>
+  mutate(visionBritain = if_else(
+    !is.na(wd_vob_place),
+    glue('<a href="https://visionofbritain.org.uk/place/{wd_vob_place}" target="_blank">', '{wd_vob_place}', '</a>') , 
+    NA )
+  )  |>
+    # added some extra BHO VCH links for yorkshire places
+  mutate(bho_vch = case_when(
+    !is.na(add_bho) ~ add_bho ,
+    !is.na(wd_bho_vch) ~ wd_bho_vch , 
+    .default = NA 
+    ))  |>
+
+  mutate(bhoVCH = if_else(
+    !is.na(bho_vch),
+    glue('<a href="https://www.british-history.ac.uk/vch/{wd_bho_vch}" target="_blank">', '{bho_vch}', '</a>') , 
+    NA )
+  )  |>
+  mutate(wikidata = if_else(
+    !is.na(wd_item),
+    glue('<a href="{wd_item}" target="_blank">', '{wikidata} {wd_itemLabel}', '</a>') , 
+    NA )
+  ) |>
+  select(place_id, address, wikipedia, natHeritage, visionBritain, bhoVCH, wikidata, lat, long, category)
+
+## for crosstalk
+shared_yorkshire <- SharedData$new(atb_yorkshire_table_links, ~place_id)
+
+
+
+```
+
+
+```{r}
+## Map - how to use a different map provider...
+## includes nls in options but i think that's out of date. but i think there might be other ways to get stuff...
+
+## eg addProviderTiles(providers$CartoDB.Positron)
+# leaflet documentation says you don't need to specify names in addCircles if they're called lat and long. but not true...
+# popup needs to be clicked, label works on hover;  , labelOptions = labelOptions(noHide = T) to show all the time.
+# popup can have html but label can't?
+# leaflet(atb_yorkshire_table_links) |> 
+#   addTiles() |> 
+#   addMarkers(lat = ~wd_lat, lng=~wd_long, popup = ~address)
+```
+
+
+```{r}
+#leaflet.providers::get_providers()
+#names(providers)
+```
+
+```{r}
+## nls maps... there is a free tier
+## can't get it working!!!!
+
+# https://www.maptiler.com/nls/
+# https://maps.nls.uk/projects/api/
+# 
+# https://maps.nls.uk/geo/explore/#zoom=14.0&lat=54.26393&lon=-1.59900&layers=1&b=1&marker=54.263929,-1.599004
+```
+
+
+
+
+
+    
+```{r}
+## working example  https://matt-dray.github.io/earl18-crosstalk/04_leaflet-flexdash-dt-crosstalk.html
+# sch <- readRDS("data/gias_sample.RDS")
+# sd <- SharedData$new(sch)
+# sd %>% 
+#   leaflet::leaflet() %>%
+#   leaflet::addProviderTiles(providers$OpenStreetMap) %>% 
+#   leaflet::addAwesomeMarkers(
+#     icon = awesomeIcons(
+#       library = "ion",
+#       icon = ifelse(
+#         test = sch$ofsted_rating == "1 Outstanding",
+#         yes = "ion-android-star-outline",
+#         no = "ion-android-radio-button-off"
+#       ),
+#       iconColor = "white",
+#       markerColor = ifelse(
+#         test = sch$sch_phase == "Primary", 
+#         yes = "red",
+#         no = "blue"
+#       )
+#     )
+#   ) %>%   # end addAwesomeMarkers()
+#   leaflet::addMeasure()
+
+## yes!!
+icons <- 
+  awesomeIcons(
+  icon = "ion-android-radio-button-off",
+  iconColor = 'white',
+  library = 'ion',
+        markerColor = ifelse(
+        test = atb_yorkshire$category == "home", 
+        yes = "red",
+        no = "blue"
+      )
+)
+
+```
+
+
+```{r}
+
+bscols(widths = c(12,12,12),
+  list(
+    # filter_checkbox("cyl", "Cylinders", shared_mtcars, ~cyl, inline = TRUE),
+    # filter_slider("hp", "Horsepower", shared_mtcars, ~hp, width = "100%"),
+    filter_select("address", "Find places", shared_yorkshire, ~address)
+  ),
+  #device = "lg", # forces single column except on bigger screens... but really want always single column?
+  
+  leaflet(shared_yorkshire, width = "100%") |> 
+    addTiles() |> 
+    addAwesomeMarkers(lat = ~lat, lng=~long, 
+                      label = ~address, 
+                      #popup = ~category,  # yes you can have both label and popup
+                      icon=icons),
+  
+  datatable(shared_yorkshire,
+          width = "100%", height="500", # height seems to make no difference on web page, only in preview ???
+          escape = FALSE, # need this to make <a> stuff work...
+          options = list(
+            columnDefs = list(list(visible=FALSE, targets=c("place_id", "lat", "long", "category")) ), # hide named columns
+            pageLength=80, # enough to show everything on one page
+            dom='t' # show only table this hides search (confusing) as well as pagination stuff (not needed if single page). 
+          ),
+          #colnames = c("atb_id"="place_id"),
+          rownames = FALSE,
+          class = "cell-border stripe"
+          #filter="top" # show filters for each column
+  
+          )
+)
+```
+
