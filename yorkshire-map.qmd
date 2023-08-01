@@ -7,10 +7,13 @@ execute:
   echo: false
 ---
 
+## About the map
 
-This map and linked data are early work in progress for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/).
+This map and linked data are early work in progress for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/). 
 
 The map shows places in Yorkshire that were mentioned by Alice Thornton in her *Books*. The table below the map provides links to related material in a number of online resources. 
+
+### usage
 
 Hover over any pin to see a basic place name label. Red pins mark places where Thornton lived for significant periods during her life; click/tap on them for extra information. 
 
@@ -269,3 +272,14 @@ bscols(widths = c(12,12,12),
 )
 ```
 
+
+## Credits
+
+Made with:
+
+* [R](https://cran.r-project.org/)
+* [Quarto](https://quarto.org/)
+* [leaflet for R](https://rstudio.github.io/leaflet/)
+* [DT](https://rstudio.github.io/DT/)
+* [crosstalk](https://rstudio.github.io/crosstalk/index.html)
+* [an example](https://matt-dray.github.io/earl18-crosstalk/04_leaflet-flexdash-dt-crosstalk.html) (with source code) that I drew on to make this map 
