@@ -68,6 +68,7 @@ library(crosstalk)
 ```{r}
 
 # list of places where AT lived
+# 
 atb_homes <- 
   tribble(~place_id, ~category, ~about,
     "Hips_022", "home", "Alice Thornton lived at Hipswell Hall, her mother's jointure property, from 1644 to 1660.",
@@ -81,13 +82,10 @@ atb_homes <-
  # mutate(category="home")
 
 
-# replaced with new version on teams [230710.] will need to make combi lat/long which isn't in new version.
-# atb_places_wikidata_v230707_xlsx <-
-#   read_excel(here::here("outputs", "places", "atb_places_wikidata_v20230707.xlsx")) |>
-#   arrange(settlement)
-
+# replaced with new version on teams [230710.] will need to make combi lat/long which isn't in new version. ?
+# this is a copy of the final xlsx in unlinked edinburgh onedrive folder at 26/2/25
 atb_places_wikidata_xlsx <-
-  read_excel("/Users/vanity/Library/CloudStorage/OneDrive-UniversityofEdinburgh/General/Ographies/atb_places_v20230710.xlsx") |>
+  read_excel("~/r_projects/atb/data/people-places/final/atb_places_v20230710.xlsx") |>
 ## add nls coords for the ones where wikidata isn't quite right...
   mutate(lat = case_when(
     !is.na(nls_lat) ~ nls_lat,
@@ -270,6 +268,24 @@ bscols(widths = c(12,12,12),
   
           )
 )
+```
+
+
+```{r}
+
+### wtf how do i get something to sit underneath the map/table?
+
+# ## Credits
+# 
+# Made with:
+# 
+# * [R](https://cran.r-project.org/)
+# * [Quarto](https://quarto.org/)
+# * [leaflet for R](https://rstudio.github.io/leaflet/)
+# * [DT](https://rstudio.github.io/DT/)
+# * [crosstalk](https://rstudio.github.io/crosstalk/index.html)
+# * [an example](https://matt-dray.github.io/earl18-crosstalk/04_leaflet-flexdash-dt-crosstalk.html) (with source code) that I drew on to make this map 
+
 ```
 
 
