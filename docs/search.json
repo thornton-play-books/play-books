@@ -1,38 +1,10 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Playing with Thornton’s Books",
-    "section": "",
-    "text": "Some experiments with data created by the Alice Thornton’s Books project.\nMapping Alice Thornton’s Yorkshire"
-  },
-  {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "About this site\n\n1 + 1\n\n[1] 2"
-  },
-  {
     "objectID": "yorkshire-map.html",
     "href": "yorkshire-map.html",
     "title": "Mapping Alice Thornton’s Books: Yorkshire",
     "section": "",
     "text": "This map and linked data are early work in progress for the Alice Thornton’s Books project.\nThe map shows places in Yorkshire that were mentioned by Alice Thornton in her Books. The table below the map provides links to related material in a number of online resources.\n\n\nHover over any pin to see a basic place name label. Red pins mark places where Thornton lived for significant periods during her life; click/tap on them for extra information.\nTo filter place names\n\nclick/tap in the Find places box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.\nor click on the make a selection button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.\n\n(You can also highlight a single place by clicking on the place name in the table (click again to reset) but please note that the map will not automatically move to show the highlighted place.)\n\n\n\n\n\n\nFind places"
-  },
-  {
-    "objectID": "yorkshire-map.html#the-map",
-    "href": "yorkshire-map.html#the-map",
-    "title": "Mapping Alice Thornton’s Books: Yorkshire",
-    "section": "",
-    "text": "This map and linked data are early work in progress for the Alice Thornton’s Books project.\nThe map shows places in Yorkshire that were mentioned by Alice Thornton in her Books. The table below the map provides links to related material in a number of online resources.\n\n\nHover over any pin to see a basic place name label. Red pins mark places where Thornton lived for significant periods during her life; click/tap on them for extra information.\nTo filter place names\n\nclick/tap in the Find places box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.\nor click on the make a selection button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.\n\n(You can also highlight a single place by clicking on the place name in the table (click again to reset) but please note that the map will not automatically move to show the highlighted place.)\n\n\n\n\n\n\n\nFind places"
-  },
-  {
-    "objectID": "yorkshire-map.html#credits",
-    "href": "yorkshire-map.html#credits",
-    "title": "Mapping Alice Thornton’s Books: Yorkshire",
-    "section": "Credits",
-    "text": "Credits\nMade with:\n\nR\nQuarto\nleaflet for R\nDT\ncrosstalk\nan example (with source code) that I drew on to make this map"
   },
   {
     "objectID": "yorkshire-map.html#about-the-map",
@@ -42,10 +14,45 @@
     "text": "This map and linked data are early work in progress for the Alice Thornton’s Books project.\nThe map shows places in Yorkshire that were mentioned by Alice Thornton in her Books. The table below the map provides links to related material in a number of online resources.\n\n\nHover over any pin to see a basic place name label. Red pins mark places where Thornton lived for significant periods during her life; click/tap on them for extra information.\nTo filter place names\n\nclick/tap in the Find places box and select from the drop down menu (or start typing names and hit enter to autocomplete). Multiple selections are allowed.\nor click on the make a selection button in the map (just below the + and - buttons) to narrow down to a smaller area of the map.\n\n(You can also highlight a single place by clicking on the place name in the table (click again to reset) but please note that the map will not automatically move to show the highlighted place.)\n\n\n\n\n\n\nFind places"
   },
   {
-    "objectID": "biblical.html",
-    "href": "biblical.html",
-    "title": "Biblical",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Playing with Thornton’s Books",
     "section": "",
-    "text": "It seemed to me that Book Rem might be over-represented for biblical citations (relative to its size), so I got word counts and biblical references (individual citations) and this shows each Book’s percentage of the total for both measures. Book Rem is punching slightly above its weight, but Book 1 more so, and what’s perhaps even more noticeable is how Book 3 is under represented. (Book 2 is about even.)\n\n\n\n\n\n\n\n\n\nIt’s quite difficult to come up with effective ways to compare references because so many (bible) books are mentioned in the Books. This only includes the top 30. I’ve put BCP Psalms in with the rest of Psalms and bundled all the rest of BCP as “Liturgy”.\n\n\n\n\n\n\n\n\n\nComparison per book\n\n\n\n\n\n\n\n\n\nBecause Psalms are so predominant, they make it difficult to see differences among the rest. So this is the same but with Psalms removed.\n\n\n\n\n\n\n\n\n\nComparison of Biblical v BCP.\n\n\n\n\n\n\n\n\n\nComparison of reference types."
+    "text": "Some experiments with data created by the Alice Thornton’s Books project.\nMapping Alice Thornton’s Yorkshire\nA Map of Events in Alice Thornton’s Books"
+  },
+  {
+    "objectID": "events-map.html",
+    "href": "events-map.html",
+    "title": "Mapping Alice Thornton’s Books: Events",
+    "section": "",
+    "text": "This is an interactive map made by Sharon Howard for the Alice Thornton’s Books project.\nThe map shows places associated with narratives of Events tagged by the project, with links to the project’s digital scholarly edition (DSE)\n\nojsAtbGeoEvent = transpose(ojs_atb_geo_event)\nojsEvents = transpose(ojs_events)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nearliest = d3.min(ojsAtbGeoEvent.map(d =&gt; d.start_year));\nlatest = d3.max(ojsAtbGeoEvent.map(d =&gt; d.end_year));\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfunction createGeoDataEvent(data) {\n  const geoData = {\n    type: 'FeatureCollection',\n    crs: {type: 'name', properties: {name: 'urn:ogc:def:crs:EPSG::27700'}},\n    features: []\n  };\n  data.map(h =&gt; {\n    geoData.features.push({\n      type: 'Feature',\n      properties: {\n        // this lacks a uid i think. shouldn't matter\n        id: h.place_id,\n        event_id: h.event_id,\n        address: h.address,\n        level: h.level,\n        type: h.place_type,\n        //category: h.category,\n        keyword: h.keyword,\n        event: h.event,\n        event_year: h.display_year,\n        start_year: h.start_year,\n        end_year: h.end_year,\n        event_link_html: h.event_link_html,\n        places_link_html: h.atb_places_link_html,\n        event_text_html: h.place_event_html\n      },\n      geometry: {\n        type: 'Point',\n        coordinates: [h.long, h.lat]\n      }\n    });\n  });\n  return geoData;\n}\n\n\n\n\n\n\n\nsearched_event = search_events.map(d =&gt; d.event_id)\nsearched_place = search_events.map(d =&gt; d.place_id) // i think you just want the event id for the search filter\n\n\nlabelEventKeywordData = [\n  ...new Set(\n    ojsAtbGeoEvent  // data source\n      .flatMap((n) =&gt; n.keyword )\n      .sort()\n  )\n]"
+  },
+  {
+    "objectID": "events-map.html#about-the-map",
+    "href": "events-map.html#about-the-map",
+    "title": "Mapping Alice Thornton’s Books: Events",
+    "section": "",
+    "text": "This is an interactive map made by Sharon Howard for the Alice Thornton’s Books project.\nThe map shows places associated with narratives of Events tagged by the project, with links to the project’s digital scholarly edition (DSE)\n\nojsAtbGeoEvent = transpose(ojs_atb_geo_event)\nojsEvents = transpose(ojs_events)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nearliest = d3.min(ojsAtbGeoEvent.map(d =&gt; d.start_year));\nlatest = d3.max(ojsAtbGeoEvent.map(d =&gt; d.end_year));\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfunction createGeoDataEvent(data) {\n  const geoData = {\n    type: 'FeatureCollection',\n    crs: {type: 'name', properties: {name: 'urn:ogc:def:crs:EPSG::27700'}},\n    features: []\n  };\n  data.map(h =&gt; {\n    geoData.features.push({\n      type: 'Feature',\n      properties: {\n        // this lacks a uid i think. shouldn't matter\n        id: h.place_id,\n        event_id: h.event_id,\n        address: h.address,\n        level: h.level,\n        type: h.place_type,\n        //category: h.category,\n        keyword: h.keyword,\n        event: h.event,\n        event_year: h.display_year,\n        start_year: h.start_year,\n        end_year: h.end_year,\n        event_link_html: h.event_link_html,\n        places_link_html: h.atb_places_link_html,\n        event_text_html: h.place_event_html\n      },\n      geometry: {\n        type: 'Point',\n        coordinates: [h.long, h.lat]\n      }\n    });\n  });\n  return geoData;\n}\n\n\n\n\n\n\n\nsearched_event = search_events.map(d =&gt; d.event_id)\nsearched_place = search_events.map(d =&gt; d.place_id) // i think you just want the event id for the search filter\n\n\nlabelEventKeywordData = [\n  ...new Set(\n    ojsAtbGeoEvent  // data source\n      .flatMap((n) =&gt; n.keyword )\n      .sort()\n  )\n]"
+  },
+  {
+    "objectID": "events-map.html#the-map",
+    "href": "events-map.html#the-map",
+    "title": "Mapping Alice Thornton’s Books: Events",
+    "section": "The Map",
+    "text": "The Map\nFeatures:\n\nsearch event descriptions or keywords (table below for reference)\nclick on cluster numbers (or zoom in/out) to drill down into areas\nclick on single markers to view event details and texts below the map, with links to the DSE.\n\n(Caveats: There may be errors, and not all places are of equal significance to Thornton’s narratives.)\n\nviewof search_events = Inputs.search(ojsAtbGeoEvent, {label: \"Search events\", columns: [\"event\", \"keyword\"], width: 400})\n\n/*\nviewof rangeYears = Inputs.form([\n  Inputs.range([earliest, latest], {label: \"From\", value: earliest, step: 1}), // start_year and end_year\n  Inputs.range([earliest, latest], {label: \"To\", value: latest, step: 1})]\n                         );\n*/\n\n//viewof eventKeywordCheck = Inputs.checkbox(labelEventKeywordData, {label: \"Event keyword\", value: labelEventKeywordData})\n\n\n\n\n\n\n\nmap = {\n  // Make a container in the Observable DOM to hold the map\n  let parent = DOM.element('div', { style: `width:${width}px; height:500px` });\n  // Make sure Observable renders the parent container so Leaflet can figure out its size\n  yield parent;\n  \n  let map = L.map(parent)\n      .setView([54.3, -3.5], 6); // uk+ire // higher numbers are more zoomed in\n  \n  // OSM fallback if maptiler fails (or simply slow to load!)\n  // possible to customise osm to simply be a bit more subtle?\n  \n  let osmTileLayer = L.tileLayer( 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n      attribution: '&copy; &lt;a href=\"https://www.openstreetmap.org/copyright\"&gt;OpenStreetMap&lt;/a&gt;',\n      maxZoom: 16,\n      minZoom: 5\n  })\n  .addTo(map);\n  \n  /*const key = 'Qm3IHfglBpG81gp4ZK4G';\n  let mtTileLayer = L.tileLayer(`https://api.maptiler.com/maps/base-v4/{z}/{x}/{y}.png?key=${key}`,{ //style URL\n    tileSize: 512,\n    zoomOffset: -1,\n    minZoom: 4,\n    attribution: \"\\u003ca href=\\\"https://www.maptiler.com/copyright/\\\" target=\\\"_blank\\\"\\u003e\\u0026copy; MapTiler\\u003c/a\\u003e \\u003ca href=\\\"https://www.openstreetmap.org/copyright\\\" target=\\\"_blank\\\"\\u003e\\u0026copy; OpenStreetMap contributors\\u003c/a\\u003e\",\n    crossOrigin: true\n}).addTo(map);*/\n  \n\n  \n  const geojsonData = createGeoDataEvent(ojsAtbGeoEvent);\n  \n  // tweak clustering...\n  \n  /*\n  Customising the Clustered Markers\n\nhow do i just make the text of the markers a bit more prominent without changing anything else?\n\n\nzoomToBoundsOnClick\nwhether to turn this off? \nbut you have no way of knowing when you've zoomed in far enough for clicking to open spiderfyed singles!\n\nmaxClusterRadius i think this def helps.\n\n  */\n  \n  const mcg = markerCluster({\n          spiderfyDistanceMultiplier: 1.8, \n          zoomToBoundsOnClick: true,\n          maxClusterRadius: 40\n      }).addTo(map);\n    \n    // todo did i find code to have different markers for types/categories?\n    \n    // single markers with a simple popup for testing. is L.geoJson the same as L.geoJSON ? seems to be\n  let markers = L.geoJSON(null, {\n  \n  \n    onEachFeature: function (feature, layer) {\n    \n      const data = feature.properties;\n      \n      // tooltip shows brief info. event short much too short to be useful!\n      \n      const tip = `&lt;div class=\"popup\"&gt;${data.address} (${data.display_year})&lt;/div&gt;`;\n      \n      layer.bindPopup(tip); // click.\n      //layer.bindTooltip(tip, {sticky: true}); // hover. \n      \n      // make html for fuller details\n      \n      // to handle NAs (undefined) need to start with an empty const. don't think there are any in this atb data though\n      //let linkedlleps = '';\n      //if(data.linked_llep) {linkedlleps = `&lt;div&gt;&lt;p&gt;&lt;i&gt;Examination(s):&lt;/i&gt;&lt;/p&gt; &lt;ul&gt;${data.linked_llep} &lt;/ul&gt;&lt;/div&gt;`; } // don't need else.\n      \n      \n      const html = `&lt;h3&gt;${data.address}&lt;/h3&gt;` + \n                    `&lt;h4&gt;${data.event}&lt;/h4&gt;` +\n                    `&lt;p&gt;${data.event_year}&lt;/p&gt;` +\n                    `&lt;ul&gt;&lt;li&gt;${data.places_link_html}&lt;/li&gt;&lt;li&gt;${data.event_link_html}&lt;/li&gt;&lt;/ul&gt;` +\n                    `&lt;div&gt;${data.event_text_html}&lt;/div&gt;` \n                    //`&lt;p&gt;${data.page_link_html}&lt;/p&gt;`\n                    ; \n                    \n      \n      //would use textContent for plain text. innerHTML for formatted HTML\n      // this needs bindPopup to work nicely on clustered things.\n      \n      layer.on('click', () =&gt; {\n        document.getElementById('atb_info').innerHTML = html; \n        })\n        \n    },\n    \n    pointToLayer: function (feature, latlng) {\n    \n    // it works! but comment out because you don't have category any more\n    /*const d = feature.properties;\n    \n    let customColour = \"red\";\n    if (d.category==\"home\") customColour = \"#CC6000\";\n    else customColour = \"#ff7800\";\n    */\n            return L.circleMarker(latlng, {\n                radius: 7, \n                //fillColor: customColour,\n                fillColor: \"#CC6000\", // a bit darker than \"#ff7800\" \n                color: \"#000\",\n                weight: 1, // width of the circle border.\n                opacity: 1,\n                fillOpacity: 1\n            });\n     }\n     \n  }) ;  \n  \n\n  \n// Once you have populated your Leaflet GeoJSON Layer Group (typically with geojsonLayer.addData(geoJsonObject), then instead of adding that group to your map, simply add it into your MarkerClusterGroup:\n  markers.addData(geojsonData).addTo(mcg);\n\n  // This is to make these variables accessible in other Observable cells.\n  // It is not necessary for regular HTML web pages.\n  \n  mutable mapVariables = [mcg, markers];\n}\n\n\n\n\n\n\n\n\n\n\n\n\nmapFilters = {\n  // This handles the changes \n  // In normal HTML environment, this would be inside the slider event handling function.\n\n  mapVariables[1].eachLayer(l =&gt; {\n    if(\n      // single year in data: l.feature.properties.start_year &gt;= rangeYears[0] && l.feature.properties.end_year &lt;= rangeYears[1] \n      // year range in data\n      //l.feature.properties.start_year &lt;= rangeYears[1] && l.feature.properties.end_year &gt;= rangeYears[0] \n      //&&\n      //eventKeywordCheck.includes(l.feature.properties.keyword)\n      searched_event.includes(l.feature.properties.event_id)\n    )  \n    {\n      l.addTo(mapVariables[0]);\n    } else {\n      l.removeFrom(mapVariables[0]);\n    }\n  })\n\n  return 'howdy'; // do i need this return line at all? probably not...\n}\n\n\n\n\n\n\n\nmutable mapVariables = null;\n\n\n\n\n\n\n\nmarkerCluster = L, require('leaflet.markercluster@1.1.0').catch(() =&gt; L.markerClusterGroup)\n\n\n\n\n\n\n\nmarkerClusterCSS = html`&lt;link href='${resolve('leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css')}' rel='stylesheet' /&gt;`"
+  },
+  {
+    "objectID": "events-map.html#table-of-events",
+    "href": "events-map.html#table-of-events",
+    "title": "Mapping Alice Thornton’s Books: Events",
+    "section": "Table of Events",
+    "text": "Table of Events"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site\n\n1 + 1\n\n[1] 2"
   }
 ]

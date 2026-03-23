@@ -84,8 +84,9 @@ atb_homes <-
 
 # replaced with new version on teams [230710.] will need to make combi lat/long which isn't in new version. ?
 # this is a copy of the final xlsx in unlinked edinburgh onedrive folder at 26/2/25
+#  read_excel("~/r_projects/atb/data/people-places/final/atb_places_v20230710.xlsx") |>
 atb_places_wikidata_xlsx <-
-  read_excel("~/r_projects/atb/data/people-places/final/atb_places_v20230710.xlsx") |>
+    read_excel("~/r_projects/atb/shared_data/atb_places_v20230710.xlsx") |>
 ## add nls coords for the ones where wikidata isn't quite right...
   mutate(lat = case_when(
     !is.na(nls_lat) ~ nls_lat,
@@ -182,7 +183,6 @@ shared_yorkshire <- SharedData$new(atb_yorkshire_table_links, ~place_id)
 
 ```{r}
 ## nls maps... there is a free tier
-## can't get it working!!!!
 
 # https://www.maptiler.com/nls/
 # https://maps.nls.uk/projects/api/

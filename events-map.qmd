@@ -1,0 +1,905 @@
+---
+title: "Mapping Alice Thornton's Books: Events"
+author: "Sharon Howard"
+execute: 
+  message: false
+  warning: false
+  echo: false
+toc: false
+---
+
+## About the Map
+
+This is an interactive map made by [Sharon Howard](https://sharonhoward.org) for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/). 
+
+The map shows places associated with narratives of [Events](https://thornton.kdl.kcl.ac.uk/posts/blog/2022-11-28-tei-events-thornton-books/) tagged by the project, with links to the project's [digital scholarly edition (DSE)](https://thornton.kdl.kcl.ac.uk/edition/?p0.lo=p.1&p0.vi=modern)
+
+
+
+
+```{r}
+
+get_shared_data <- function(){
+  "~/r_projects/atb/shared_data/"  
+}
+
+library(readxl)
+library(readtext)
+library(janitor)
+library(scales)
+
+library(snakecase)
+library(glue)
+
+library(xml2)
+library(rvest)
+
+library(reactable)
+library(htmltools)
+
+library(tidytext)
+library(tidyverse)
+
+```
+
+
+```{r}
+#omitted atb_homes... need to drop refs to category
+
+
+# this is a copy of the final xlsx in unlinked edinburgh onedrive folder at 26/2/25 
+# is it safe to use the address column, or should i reconstruct from segments? i can't quite remember...
+
+atb_places_wikidata_xlsx <-
+  read_excel("~/r_projects/atb/shared_data/atb_places_v20230710.xlsx") |>
+## add nls coords for the ones where wikidata isn't quite right...
+  mutate(lat = case_when(
+    !is.na(nls_lat) ~ nls_lat,
+    .default = wd_lat
+  )) |>
+  mutate(long = case_when(
+    !is.na(nls_long) ~ nls_long,
+    .default = wd_long
+  ))
+
+
+atb_places <-
+atb_places_wikidata_xlsx |>
+  filter(level!="country") |> # keep counties (and the two sub-counties for now)
+  mutate(lat=as.numeric(lat), long=as.numeric(long)) |>
+  # make better address label. 
+  mutate(label = case_when(
+  # depends on empties being NA!
+  # added level=non-country to deal with things like Irish Sea that are outside the usual hierarchy as they're not in a country
+           level=="non-country" ~ placeName, 
+           level=="country" ~ country,
+           !is.na(placeName)  & is.na(settlement) ~ glue("{placeName}, {region}"),
+           !is.na(placeName) ~ glue("{placeName}, {settlement}, {region}"),
+           !is.na(settlement) ~ glue("{settlement}, {region}"),
+           !is.na(region) ~ glue("{region}, {country}"),
+           .default = placeName # in case anything is not caught above this should at least ensure blank or somethig.
+         )) |>
+  #left_join(atb_homes |> select(place_id, category, about), by="place_id") |>
+  #mutate(category = if_else(!is.na(category), category, "other")) |>
+  mutate(atb_places_url = glue("https://thornton.kdl.kcl.ac.uk/entities/?hi=place:{place_id}")) |>
+  mutate(atb_places_link_html = glue("Search edition for mentions of <a href='{atb_places_url}' target='_blank'>{label}</a>")) 
+
+
+
+
+
+
+# with tagged places only.
+
+# # get the file names with full path. 
+atb_evs_places_xml_files_folder <-
+  list.files("~/r_projects/atb/shared_data/xml/evdivs_places/", pattern = "*.xml$", full.names = TRUE)
+
+# but now you have to work out how to get the bits of xml you want... quicker right now to just read_lines? you know what code you need instead of having to look stuff up.
+
+atb_fetch_evs_places_lines <-
+  map(atb_evs_places_xml_files_folder, read_lines)
+
+
+# need to check this still works and then work out to change the entities tags...
+# seems good but you have a problem don't you. you can change all </?rs easily. and you can pick <rs type="whatever"
+# but you can't diff </rs> for ppl names from </rs> for place names. feck. 
+# you can't even assume that opening <rs will be on the same line as closing </rs> actually. 
+
+# maybe i'll do it properly at some point lol
+atb_evs_places_xml_txt <-
+map(atb_fetch_evs_places_lines, enframe) |>
+  bind_rows() |>
+  mutate(b = cumsum(str_detect(value, "<TEI"))) |>
+  filter(b != 0) |>
+  group_by(b) |>
+  mutate(t = cumsum(str_detect(value, "</?text>"))) |>
+  mutate(xmlid = if_else(str_detect(value, "<TEI"), value, NA)) |>
+  mutate(xmlid = str_match(xmlid, 'xml:id="([^"]+)"')[,2] ) |>
+  fill(xmlid) |>
+  filter(t==1 & !str_detect(value, "</?text|</?body")) |>
+  mutate(value = str_trim(value)) |>
+  filter(value !="") |>
+  select(-t) |>
+  mutate(d = cumsum(str_detect(value, "<div"))) |>
+  mutate(id = if_else(str_detect(value, "<div"), value, NA)) |>
+  mutate(id = str_match(id, 'xml:id="([^"]+)"')[,2]) |>
+  ungroup() |>
+  # make div atts more html-y, and then you can use css.
+  mutate(value = str_replace(value, 'type="event"', 'class="atb-ev-mention"')) |>
+  mutate(value = str_replace(value, 'xml:id="([^"]+)"', 'id="\\1"')) |>
+  group_by(b, d) |>
+  fill(id) |>
+  ungroup()  |>
+  # turn <rs into <em... that doesn't quite work.
+  mutate(value = str_replace_all(value, "<rs", "<span class='hi_place'"), value = str_replace_all(value, "</rs", "</span")) |>
+  group_by(xmlid, id) |>
+  summarise(ev_text_html = glue_collapse(value, sep = " "), .groups = "drop_last") |>
+  ungroup() |>
+  separate(id, into = c("div_id", "ev"), sep = "\\.")
+
+
+
+
+
+## events short titles have been updated i think but still a bit WIP
+## are these and in events xlsx in correct date order? some look wrong in here. use the final event sort
+
+# dates ugh. i see i have a lot of when/notbefore/from tei stuff going on
+# just simplify to first year for now? use that for the filter, display can be more complex.
+
+events_short_titles_xlsx <-
+  read_excel(paste0(get_shared_data(), "atb_events_short_titles_20250606_ed.xlsx"), sheet = "events")
+
+# don't think this includes parent events. 
+events_xlsx <-
+  read_excel(paste0(get_shared_data(), "atb_events_groups_ev_ids_20250408.xlsx"), sheet = "events")
+
+# based on events standoff in atb, adding year.
+events_dates <- 
+events_xlsx |> 
+  select(event_id, event_date) |>
+  separate(event_date, into=c("start", "end"), sep="/|\\|", remove = F, fill = "right") |>
+  mutate(date_type = case_when(
+    is.na(end) ~ "point",
+    str_detect(event_date, "/") ~ "range",
+    str_detect(event_date, "\\|") ~ "limit"
+  )) |>
+  mutate(end = if_else(is.na(end), start, end)) |>
+  mutate(start_fuzzy = if_else(str_detect(start, "[%~?]"), TRUE, FALSE)) |>
+  mutate(end_fuzzy = if_else(str_detect(end, "[%~?]"), TRUE, FALSE)) |>
+  mutate(across(c(start, end), ~str_remove_all(., "[%~?]"))) |>
+  mutate(across(c(start, end), ~str_sub(., 1, 4), .names="{.col}_year") ) |>
+  mutate(across(c(start_year, end_year), parse_number))  |>
+  mutate(year_type = case_when(
+    start_year==end_year ~ "single",
+    .default = date_type
+    ))
+
+  # mutate(when = if_else(date_type=="point", date1, NA)) |>
+  # mutate(notBefore = if_else(date_type=="limit", date1, NA),
+  #        notAfter = if_else(date_type=="limit", date2, NA)) |>
+  # mutate(from = if_else(date_type=="range", date1, NA),
+  #        to = if_else(date_type=="range", date2, NA))
+
+
+events_longer <-
+events_xlsx |> 
+  mutate(year = parse_number(str_sub(event_date))) |>
+  select(event_id, event, rowid, keyword, year, event_date, date_type, date_sort, book1:bookrem) |>
+  # add short titles. 
+  inner_join(events_short_titles_xlsx |> select(event_id, event_short), by="event_id") |>
+  pivot_longer(book1:bookrem, names_to = "book", values_to = "evs") |>
+  filter(!is.na(evs)) 
+
+events_evs <-
+events_longer |>
+  unnest_regex(ev, evs, pattern=" +", drop = F, to_lower = F) |>
+  # ev doesn't need the bookX: prefix as that's also in the book col.
+  mutate(ev = str_remove_all(ev, "book(\\d|rem):")) |>
+  relocate(book, ev) |>
+  mutate(xmlid = case_match(
+    book,
+    "bookrem" ~ "atb-book-of-remembrances",
+    "book1" ~ "atb-book-one",
+    "book2" ~  "atb-book-two",
+    "book3" ~  "atb-book-three"
+  )) |>
+  inner_join(atb_evs_places_xml_txt |> select(-div_id), by=c("xmlid", "ev"))
+
+
+
+events_metadata <-
+events_xlsx |> 
+  mutate(year = parse_number(str_sub(event_date))) |>
+  select(event_id, event, rowid, keyword, year, event_date, date_type, date_sort) |>
+  # add short titles. 
+  inner_join(events_short_titles_xlsx |> select(event_id, event_short), by="event_id") |>
+  # add dates
+  inner_join(events_dates |> select(event_id, start_year, end_year, year_type), by="event_id")
+
+
+data_reactable <-
+  events_metadata |>
+  select(event_id, event, keyword, start_year, end_year, year_type, date_sort) |>
+  arrange(date_sort)
+```
+
+
+
+
+```{r}
+# see places qmd for details. love it when i can just reuse code and do stuff in an hour!
+# needs some renaming for this context though, to diff mentions from places...
+
+atb_place_tag_bkrem_read <- read_html(paste0(get_shared_data(), "xml/places/atb_bookrem_places_table.xml"))
+atb_place_tag_bkrem_table <- html_table(atb_place_tag_bkrem_read, na.strings = "")[[1]] 
+
+atb_place_tag_book1_read <- read_html(paste0(get_shared_data(), "xml/places/atb_book1_places_table.xml"))
+atb_place_tag_book1_table <- html_table(atb_place_tag_book1_read, na.strings = "")[[1]]
+
+atb_place_tag_book2_read <- read_html(paste0(get_shared_data(), "xml/places/atb_book2_places_table.xml"))
+atb_place_tag_book2_table <- html_table(atb_place_tag_book2_read, na.strings = "")[[1]]
+
+atb_place_tag_book3_read <- read_html(paste0(get_shared_data(), "xml/places/atb_book3_places_table.xml"))
+atb_place_tag_book3_table <- html_table(atb_place_tag_book3_read, na.strings = "")[[1]]
+
+
+# reusing quotes code, seems to work.
+# do this before filtering anything so you can reuse in different ways when needed.
+place_tag_table_all <-
+  bind_rows(
+    atb_place_tag_bkrem_table |> mutate(src="Book Rem", xmlid="atb-book-of-remembrances"),
+    atb_place_tag_book1_table |> mutate(src="Book 1", xmlid="atb-book-one"),
+    atb_place_tag_book2_table |> mutate(src="Book 2", xmlid="atb-book-two"),
+    atb_place_tag_book3_table |> mutate(src="Book 3", xmlid="atb-book-three")
+  ) |>
+  # add type for titlePage, then convert titlePage to div
+  mutate(type = if_else(element=="titlePage", "titlePage", type)) |>
+  mutate(element = if_else(element=="titlePage", "div", element)) |>
+  # now you need to fill down the pb id etc, then filter out unwanted rows.
+  # with this version you have to make the pb (etc) column first.
+  mutate(level = if_else(element %in% c("front", "body", "back"), element, NA)) |>
+  mutate(pb_id = if_else(element=="pb", id, NA)) |>
+  mutate(div_id = if_else(element%in% c("div", "titlePage"), id, NA)) |>
+  mutate(ev_id = if_else(type=="event", id, NA)) |>
+  # group by src *before* fill prevents any overspill between Books.
+  group_by(src) |>
+  # nb empty div tag at the beginning of B2 (before the first pb_id)
+  fill(level, pb_id, div_id, ev_id) |>
+  # can't use parse_number on div_id, so this makes new per-id num IDs
+  # also needs group_by src to restart for each Book, not for the ranking itself
+  mutate(divn_id = dense_rank(div_id)) |>
+  ungroup() |>
+  # numerical page number from id.
+  mutate(page = parse_number(str_extract(pb_id, "\\d+"))) |>
+  # div can have more than one page; get just the start page (eg for location in reactable)
+  # should work for end of div as well? may need to check.
+  # needs to group by src as well as div id
+  group_by(src, div_id) |>
+  mutate(div_start = min(page), div_end=max(page)) |>
+  ungroup() |>
+  # correction for ev ids  
+  # NA -end ids apart from anchor; remove -start or -end suffix from the rest.
+  mutate(ev_id = case_when(
+    str_detect(ev_id, "-end") & element !="anchor" ~ NA,
+    str_detect(ev_id, "-end") ~ str_remove(ev_id, "-end"),
+    .default = str_remove(ev_id, "-start")
+  )) |>
+  # add an ev start page as per div ids.
+  # need case_when or if_else because (unlike div) not all rows are in events.
+  group_by(src, ev_id) |>
+  mutate(ev_start = case_when(
+    !is.na(ev_id) ~ min(page)
+  )) |>
+  ungroup() |>
+  # ensure every row has a uid
+  rowid_to_column()
+
+
+#  filter(!place_id %in% c("Engl_094", "Irel_096", "Fran_097"))  
+# not filtering out countries... but you've done that in atb_places
+
+# no multis so don't need unnest. 
+# first version without grouping
+# place_tag_table <-
+
+
+
+# you need page numbers rather than ev ids but can link or highlight within page
+# book_id isn't the same as the xmlid, need underscores instead of hyphens. 
+# https://thornton.kdl.kcl.ac.uk/edition/?p0.do=book_two&p0.lo=p.104&p0.vi=modern&hi=aow1_1595_child_accident
+# or highlight the place name?
+# https://thornton.kdl.kcl.ac.uk/edition/?p0.lo=p.12&p0.vi=modern&hi=place:Rich_043
+
+
+place_tag_table_event <-
+place_tag_table_all |>
+  filter(element=="name") |> # 1439 
+  # drop any place without ref (you can't do anything with them anyway)
+  filter(str_detect(ref, "place:")) |> # 1402
+  #unnest_regex(pers_id, ref, pattern = " +", to_lower = F, drop = F) |> # don't need this
+  #relocate(pers_id, .after = rowid) |>
+  mutate(ref=str_remove(ref, "place:")) |>
+  rename(place_id=ref) |>
+  # drop rowid and make this distinct to avoid dups
+  distinct(place_id, text, xmlid, src, ev_id, page, div_id) |>
+  #select(rowid, place_id, text, xmlid, src, ev_id, page, div_id) |>
+  # url for a page needs another format!
+  mutate(book_id = case_when(
+        src=="Book 1" ~ "book_one",
+        src=="Book 2" ~ "book_two",
+        src=="Book 3" ~ "book_three",
+        src=="Book Rem" ~ "book_rem"
+      )) |>
+  #rowid_to_column("uid") # don't need to do this though occasionally something needs a 1- sequence. 
+  # try another distinct here lol
+  inner_join(events_evs |> distinct(ev, xmlid, event_id, event, ev_text_html), by=c("ev_id"="ev", "xmlid")) |>
+  # ok at this point you have one row per ev.
+  # you want to end up with one row per event+place 
+  # BUT retaining per ev formatting and page links
+  # so first you need book + page to make urls
+  mutate(page_url = glue("https://thornton.kdl.kcl.ac.uk/edition/?p0.do={book_id}&p0.lo=p.{page}&p0.vi=modern&hi=place:{place_id}")) |>
+  mutate(page_link_html = glue("<a href='{page_url}' target='_blank'>{src}: {page}</a>")) |>
+  # page link makes a heading; it would need to be h5 i think, not sure what that'll look like
+  mutate(page_ev_html = glue("<div class='page_ev_html'><h5>{page_link_html}</h5> {ev_text_html}</div>")) |> # 1028
+  # to dedup >1 ev-place-page
+  distinct(place_id, event_id, page_ev_html) |> # 988
+  group_by(place_id, event_id) |>
+  summarise(place_event_html = glue_collapse(page_ev_html, sep=" \n"), .groups = "drop_last") |>
+  ungroup()
+
+
+
+
+atb_places_geo_event <-
+  atb_places |>
+  mutate(place_type = case_when(
+    level %in% c("geo", "non-country") ~ "geographical",
+    level=="subregion" ~ "region",
+    .default = level
+  ))  |> 
+  mutate(country = case_when(
+    place_id=="Iris_130" ~ NA,
+    is.na(country) ~ "England",
+    .default = country
+  )) |>
+  # prob wont need place segments tbh. or wikidata stuff.
+  select(place_id, address= label, place_type, level, type, atb_places_link_html, lat, long) |>
+  inner_join(place_tag_table_event, by="place_id") |>
+  inner_join(events_metadata, by="event_id") |>
+  # should this include fuzziness? it's just so complicated.
+  mutate(display_year = case_when(
+    start_year==end_year ~ as.character(start_year),
+    .default = glue("{start_year}-{end_year}")
+  )) |>
+  mutate(event_link_html = glue("Search edition for mentions of <a href='https://thornton.kdl.kcl.ac.uk/entities/?hi={event_id}&v=expanded' target='_blank'>this event</a>"))
+```
+
+
+
+```{r}
+ojs_define(ojs_atb_geo_event = atb_places_geo_event)
+ojs_define(ojs_events = events_metadata)
+```
+
+
+```{ojs}
+ojsAtbGeoEvent = transpose(ojs_atb_geo_event)
+ojsEvents = transpose(ojs_events)
+```
+
+
+
+```{ojs} 
+// for the slider
+// fortunately, earliest and latest dates are both single points...
+earliest = d3.min(ojsAtbGeoEvent.map(d => d.start_year));
+latest = d3.max(ojsAtbGeoEvent.map(d => d.end_year));
+```
+
+
+
+```{ojs} 
+function createGeoDataEvent(data) {
+  const geoData = {
+    type: 'FeatureCollection',
+    crs: {type: 'name', properties: {name: 'urn:ogc:def:crs:EPSG::27700'}},
+    features: []
+  };
+  data.map(h => {
+    geoData.features.push({
+      type: 'Feature',
+      properties: {
+        // this lacks a uid i think. shouldn't matter
+        id: h.place_id,
+        event_id: h.event_id,
+        address: h.address,
+        level: h.level,
+        type: h.place_type,
+        //category: h.category,
+        keyword: h.keyword,
+        event: h.event,
+        event_year: h.display_year,
+        start_year: h.start_year,
+        end_year: h.end_year,
+        event_link_html: h.event_link_html,
+        places_link_html: h.atb_places_link_html,
+        event_text_html: h.place_event_html
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [h.long, h.lat]
+      }
+    });
+  });
+  return geoData;
+}
+```
+
+
+
+
+```{ojs}
+// array of event descriptions for datalist. hmm maybe. would need to sort out ordering.
+// events_list = ojsAtbGeoEvent.map(d => d.event)
+// make array of event/place ids for filter
+// you should add keywords to the search...
+
+searched_event = search_events.map(d => d.event_id)
+searched_place = search_events.map(d => d.place_id) // i think you just want the event id for the search filter
+
+
+labelEventKeywordData = [
+  ...new Set(
+    ojsAtbGeoEvent  // data source
+      .flatMap((n) => n.keyword )
+      .sort()
+  )
+]
+```
+
+
+## The Map
+
+Features:
+
+* search event descriptions or keywords (table below for reference)
+* click on cluster numbers (or zoom in/out) to drill down into areas
+* click on single markers to view event details and texts below the map, with links to the DSE.
+
+(*Caveats:* There may be errors, and not all places are of equal significance to Thornton's narratives.)
+
+
+```{ojs}
+viewof search_events = Inputs.search(ojsAtbGeoEvent, {label: "Search events", columns: ["event", "keyword"], width: 400})
+
+/*
+viewof rangeYears = Inputs.form([
+  Inputs.range([earliest, latest], {label: "From", value: earliest, step: 1}), // start_year and end_year
+  Inputs.range([earliest, latest], {label: "To", value: latest, step: 1})]
+                         );
+*/
+
+//viewof eventKeywordCheck = Inputs.checkbox(labelEventKeywordData, {label: "Event keyword", value: labelEventKeywordData})
+```
+
+
+
+
+```{ojs}
+
+map = {
+  // Make a container in the Observable DOM to hold the map
+  let parent = DOM.element('div', { style: `width:${width}px; height:500px` });
+  // Make sure Observable renders the parent container so Leaflet can figure out its size
+  yield parent;
+  
+  let map = L.map(parent)
+      .setView([54.3, -3.5], 6); // uk+ire // higher numbers are more zoomed in
+  
+  // OSM fallback if maptiler fails (or simply slow to load!)
+  // possible to customise osm to simply be a bit more subtle?
+  
+  let osmTileLayer = L.tileLayer( 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 16,
+      minZoom: 5
+  })
+  .addTo(map);
+  
+  /*const key = 'Qm3IHfglBpG81gp4ZK4G';
+  let mtTileLayer = L.tileLayer(`https://api.maptiler.com/maps/base-v4/{z}/{x}/{y}.png?key=${key}`,{ //style URL
+    tileSize: 512,
+    zoomOffset: -1,
+    minZoom: 4,
+    attribution: "\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
+    crossOrigin: true
+}).addTo(map);*/
+  
+
+  
+  const geojsonData = createGeoDataEvent(ojsAtbGeoEvent);
+  
+  // tweak clustering...
+  
+  /*
+  Customising the Clustered Markers
+
+how do i just make the text of the markers a bit more prominent without changing anything else?
+
+
+zoomToBoundsOnClick
+whether to turn this off? 
+but you have no way of knowing when you've zoomed in far enough for clicking to open spiderfyed singles!
+
+maxClusterRadius i think this def helps.
+
+  */
+  
+  const mcg = markerCluster({
+          spiderfyDistanceMultiplier: 1.8, 
+          zoomToBoundsOnClick: true,
+          maxClusterRadius: 40
+      }).addTo(map);
+	
+	// todo did i find code to have different markers for types/categories?
+	
+	// single markers with a simple popup for testing. is L.geoJson the same as L.geoJSON ? seems to be
+  let markers = L.geoJSON(null, {
+  
+  
+    onEachFeature: function (feature, layer) {
+    
+      const data = feature.properties;
+      
+      // tooltip shows brief info. event short much too short to be useful!
+      
+      const tip = `<div class="popup">${data.address} (${data.display_year})</div>`;
+      
+      layer.bindPopup(tip); // click.
+      //layer.bindTooltip(tip, {sticky: true}); // hover. 
+      
+      // make html for fuller details
+      
+      // to handle NAs (undefined) need to start with an empty const. don't think there are any in this atb data though
+      //let linkedlleps = '';
+      //if(data.linked_llep) {linkedlleps = `<div><p><i>Examination(s):</i></p> <ul>${data.linked_llep} </ul></div>`; } // don't need else.
+      
+      
+      const html = `<h3>${data.address}</h3>` + 
+                    `<h4>${data.event}</h4>` +
+                    `<p>${data.event_year}</p>` +
+                    `<ul><li>${data.places_link_html}</li><li>${data.event_link_html}</li></ul>` +
+                    `<div>${data.event_text_html}</div>` 
+                    //`<p>${data.page_link_html}</p>`
+                    ; 
+                    
+      
+      //would use textContent for plain text. innerHTML for formatted HTML
+      // this needs bindPopup to work nicely on clustered things.
+      
+      layer.on('click', () => {
+        document.getElementById('atb_info').innerHTML = html; 
+        })
+        
+    },
+    
+    pointToLayer: function (feature, latlng) {
+    
+    // it works! but comment out because you don't have category any more
+    /*const d = feature.properties;
+    
+    let customColour = "red";
+    if (d.category=="home") customColour = "#CC6000";
+    else customColour = "#ff7800";
+    */
+			return L.circleMarker(latlng, {
+				radius: 7, 
+				//fillColor: customColour,
+				fillColor: "#CC6000", // a bit darker than "#ff7800" 
+				color: "#000",
+				weight: 1, // width of the circle border.
+				opacity: 1,
+				fillOpacity: 1
+			});
+     }
+     
+  }) ;  
+  
+
+  
+// Once you have populated your Leaflet GeoJSON Layer Group (typically with geojsonLayer.addData(geoJsonObject), then instead of adding that group to your map, simply add it into your MarkerClusterGroup:
+  markers.addData(geojsonData).addTo(mcg);
+
+  // This is to make these variables accessible in other Observable cells.
+  // It is not necessary for regular HTML web pages.
+  
+  mutable mapVariables = [mcg, markers];
+}
+
+```
+
+
+<div class="atb_description">
+
+<div id="atb_info"></div>
+
+</div>
+
+
+
+```{ojs}
+
+mapFilters = {
+  // This handles the changes 
+  // In normal HTML environment, this would be inside the slider event handling function.
+
+  mapVariables[1].eachLayer(l => {
+    if(
+      // single year in data: l.feature.properties.start_year >= rangeYears[0] && l.feature.properties.end_year <= rangeYears[1] 
+      // year range in data
+      //l.feature.properties.start_year <= rangeYears[1] && l.feature.properties.end_year >= rangeYears[0] 
+      //&&
+      //eventKeywordCheck.includes(l.feature.properties.keyword)
+      searched_event.includes(l.feature.properties.event_id)
+    )  
+    {
+      l.addTo(mapVariables[0]);
+    } else {
+      l.removeFrom(mapVariables[0]);
+    }
+  })
+
+  return 'howdy'; // do i need this return line at all? probably not...
+}
+```
+
+```{ojs}
+mutable mapVariables = null;
+```
+
+
+
+```{ojs}
+markerCluster = L, require('leaflet.markercluster@1.1.0').catch(() => L.markerClusterGroup)
+```
+
+
+```{ojs}
+markerClusterCSS = html`<link href='${resolve('leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css')}' rel='stylesheet' />`
+```
+
+
+
+
+
+```{css}
+.atb_description { border: 1px solid #d3d3d3; background-color: #f5f5f5; padding: 10px; margin: 10px 5px;}
+.atb_description div#atb_info h3 {margin: 20px 0;}
+.atb_description div#atb_info div ul li {list-style-type: none;}
+.atb_description div#atb_info ul {padding-left: 0;}
+.atb_description div#atb_info ul li {margin-left: 20px;}
+.atb_description div#atb_info div ul li h4 {margin-top:0;}
+
+span.hi_place {padding:2px; background-color: white;}
+```
+
+
+## Table of Events 
+
+```{r}
+
+## https://glin.github.io/reactable/articles/custom-rendering.html#headers  
+## plus https://glin.github.io/reactable/articles/building-twitter-followers.html?q=replace#finishing-touches for replace function
+## js function to replace _ in header names with space. often wouldn't need anything else.
+headerMakeSpace <- JS("function(column, state) {
+      return column.name.replace('_', ' ')
+    }")
+
+
+
+## filterInput functions ####
+
+## you can probably compare the internal filter functions to the external ones if you want to make adaptations...
+
+# (internal) data list column filter for a table with the given ID
+# based on https://glin.github.io/reactable/articles/custom-filtering.html#data-list-filter
+# additions:
+# sort values alphabetically (default seems to be order of appearance in data)
+# placeholder text (default empty)
+# might be possible to extend to change type? or better to have separate functions for numeric etc?
+
+dataListFilterInput <- function(tableId, placeholder=NULL, style = "width: 100%; height: 28px;") {
+  function(values, name) {
+    dataListId <- sprintf("%s-%s-list", tableId, name)
+    tagList(
+      tags$input(
+        type = "text",
+        list = dataListId,
+        placeholder = placeholder,
+        oninput = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)", tableId, name),
+        "aria-label" = sprintf("Filter %s", name),
+        style = style 
+      ),
+      tags$datalist(
+        id = dataListId,
+        # added sort here
+        lapply(sort(unique(values)), function(value) tags$option(value = value))
+      )
+    )
+  }
+}
+
+
+
+# Filter by case-sensitive exact text match. 
+# if you don't want case-sensitive you'll probably need regex.
+# see also https://github.com/glin/reactable/issues/318#issuecomment-2107704839
+# in some examples the final line doesn't have String() - idk whether it makes a difference    
+# return row.values[columnId] === filterValue; 
+
+filterTextExact <- JS("function(rows, columnId, filterValue) {
+        return rows.filter(function(row) {
+          return String(row.values[columnId]) === filterValue
+        })
+      }")
+
+
+# dropdown select with "All" as default.
+
+selectFilterInput <- function(tableId, style = "width: 100%; height: 28px;") {
+  function(values, name) {
+    tags$select(
+      # Set to undefined to clear the filter
+      onchange = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)", tableId, name),
+      # "All" has an empty value to clear the filter, and is the default option
+      tags$option(value = "", "All"),
+      # added sort here (but what if you have a value alphabetically < All?)
+      lapply(sort(unique(values)), tags$option),
+      "aria-label" = sprintf("Filter %s", name),
+      style = style
+    )
+  }
+}
+
+
+```
+
+
+
+```{r}
+
+reactable(
+
+  data_reactable, 
+  
+  columns = list(
+
+    
+    # linkify a column (using first_img). make sure you use the right data_reactable name!
+    # https://thornton.kdl.kcl.ac.uk/entities/?hi={event_id}&v=expanded
+    event_id = colDef(name="",
+                      maxWidth = 90,
+                      filterable = FALSE,
+                      html = TRUE,
+                      cell = function(value, index){
+              sprintf('<a href="https://thornton.kdl.kcl.ac.uk/entities/?hi=%s&v=expanded" target="_blank">DSE</a>', data_reactable$event_id[index])
+            }), 
+    
+    event = colDef(minWidth = 200),
+    
+    start_year = colDef(name="from", maxWidth = 100),
+    end_year = colDef(name="to", maxWidth = 100),
+    
+    # select dropdown + exact text search
+    keyword = colDef(maxWidth = 150 ,
+        filterInput = selectFilterInput("data-table"),
+        # exact text search to avoid the 'male' in 'female' problem
+       filterMethod = filterTextExact
+    ),
+    
+    # # datalist for a single column. nb the function has placeholder and style options
+    # keyword = colDef(
+    #   filterInput = dataListFilterInput("data-table", style = "width: 100%; height: 32px;") 
+    #   ), # noticed default 28px isn't quite as tall as the std box, odd.
+    
+    # columns to hide
+    year_type = colDef(show = FALSE),
+    date_sort = colDef(show = FALSE)
+
+),
+
+  ## dropped a few options that I'm unlikely to use/change. (eg rownames)
+
+  # groups are esp useful for wider tables, but take a fair bit of work.
+  #   columnGroups = list(
+  #     colGroup()
+  # ),
+
+  elementId = "data-table", # change if more than one on the page!
+
+  filterable = TRUE,
+
+  defaultColDef = colDef(
+      header = headerMakeSpace, # replaces underscore with space. often all you need to make headers presentable!
+      minWidth = 120,
+      sortNALast = TRUE,
+    # start with this commented out as it can slow down large/texty tables. but it's usually worth using.
+    ## can exclude specific column(s) by name in the if() eg '& name !="url_text"'
+      filterInput = function(values, name) {
+        if (is.character(values) ) {
+        dataListFilterInput("data-table")(values, name)
+      }
+    } # /filterInput
+   ), # /defaultcoldef
+
+  #defaultColGroup = NULL,
+
+  pagination = TRUE,
+  defaultPageSize = 20,
+  showPageSizeOptions = TRUE,
+  pageSizeOptions = c(20, 50, 100),
+  paginationType = "numbers", # "numbers" for page number buttons, "jump" for a page jump (more compact up-down arrows, useful for tables with a lot of pages)
+  showPagination = NULL, # Defaults to TRUE if the table has more than one page.
+  showPageInfo = TRUE,
+
+  
+# appearance options might vary a bit 
+  highlight = TRUE, # highlight on hover?
+  outlined = TRUE, # borders around the table? i quite like the borders actually.
+  bordered = TRUE, # borders around the table and every cell?
+  borderless = FALSE, #  Remove inner borders from table?
+  striped = FALSE, # zebra striping for table rows. how well does this go with borders?
+  compact = FALSE, # what diff does this make? I think just a bit less padding etc.
+
+  #groupBy = NULL, # colname or c(colnames). aggregation using aggregate arg in colDef()
+
+  #sortable = TRUE,
+  #resizable = FALSE,
+
+  #searchable = FALSE, # won't often want this
+  #searchMethod = NULL, # custom search method, JS()
+  
+  # defaultSortOrder = "asc", # "desc" for descending order
+  # defaultSorted = NULL, # colname / c(colnames). for different directions use list() list(Species = "asc", Petal.Length = "desc")
+
+  #minRows = 1,
+  #paginateSubRows = FALSE, #  When rows are grouped, paginate sub rows? 
+  
+  #wrap = TRUE, # text wrapping. If TRUE, long text wrapped to multiple lines. If FALSE, text truncated to fit on one line.
+    
+  fullWidth = TRUE,
+  # class = NULL, #   Additional CSS classes to apply to the table.
+  # style = NULL, #  Inline styles to apply to table. named list or character string. if named list, property names should be camelCased.
+  # rowClass = NULL, # Additional CSS classes to apply to table rows. character string, a JS() function, or an R function
+  # rowStyle = NULL, # inline styles for table rows. character string / JS() / R function. if named list, camelCase stuff
+  
+  theme = getOption("reactable.theme"), #  Theme options for table, specified by reactableTheme(). Can also be a function that returns a reactableTheme() or NULL.
+  
+  #meta = NULL, #  Custom metadata to pass to JavaScript render functions or style functions. A named list of values that can also be JS() expressions or functions. 
+
+  defaultExpanded = FALSE, # whether to load with nested rows opened 
+  
+
+  # details = NULL, # Additional content to display when expanding a row. An R function that takes the row index and column name as arguments, or a JS() function that takes a row info object as an argument. Can also be a colDef() to customize the details expander column.
+  
+) 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
