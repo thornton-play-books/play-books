@@ -500,6 +500,7 @@ map = {
   
   // OSM fallback if maptiler fails (or simply slow to load!)
   // possible to customise osm to simply be a bit more subtle?
+  // 2026-03-23 weird access blocked messages, though map shows. try reinstating maptiler- that's ok in mindseye.
   
   let osmTileLayer = L.tileLayer( 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -508,14 +509,16 @@ map = {
   })
   .addTo(map);
   
-  /*const key = 'Qm3IHfglBpG81gp4ZK4G';
+  /*
+*/
+  const key = 'Qm3IHfglBpG81gp4ZK4G';
   let mtTileLayer = L.tileLayer(`https://api.maptiler.com/maps/base-v4/{z}/{x}/{y}.png?key=${key}`,{ //style URL
     tileSize: 512,
     zoomOffset: -1,
     minZoom: 4,
     attribution: "\u003ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003e\u0026copy; MapTiler\u003c/a\u003e \u003ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003e\u0026copy; OpenStreetMap contributors\u003c/a\u003e",
     crossOrigin: true
-}).addTo(map);*/
+}).addTo(map);
   
 
   
