@@ -558,7 +558,7 @@ maxClusterRadius i think this def helps.
       
       // tooltip shows brief info. event short much too short to be useful!
       
-      const tip = `<div class="popup">${data.address} (${data.display_year})</div>`;
+      const tip = `<div class="popup">${data.address} (${data.event_year})</div>`;
       
       layer.bindPopup(tip); // click.
       //layer.bindTooltip(tip, {sticky: true}); // hover. 
