@@ -100,16 +100,11 @@ atb_places_wikidata_xlsx |>
 atb_evs_places_xml_files_folder <-
   list.files("~/r_projects/atb/shared_data/xml/evdivs_places/", pattern = "*.xml$", full.names = TRUE)
 
-# but now you have to work out how to get the bits of xml you want... quicker right now to just read_lines? you know what code you need instead of having to look stuff up.
+# but now you have to work out how to get the bits of xml you want... quicker right now to just read_lines? shonky but you know what code you need instead of having to look stuff up.
 
 atb_fetch_evs_places_lines <-
   map(atb_evs_places_xml_files_folder, read_lines)
 
-
-# need to check this still works and then work out to change the entities tags...
-# seems good but you have a problem don't you. you can change all </?rs easily. and you can pick <rs type="whatever"
-# but you can't diff </rs> for ppl names from </rs> for place names. feck. 
-# you can't even assume that opening <rs will be on the same line as closing </rs> actually. 
 
 # maybe i'll do it properly at some point lol
 atb_evs_places_xml_txt <-
@@ -179,7 +174,14 @@ events_xlsx |>
   mutate(year_type = case_when(
     start_year==end_year ~ "single",
     .default = date_type
-    ))
+    ))   |>
+  # include fuzziness
+  mutate(display_year = case_when(
+    start_year==end_year & (start_fuzzy==TRUE) ~ glue("c. {start_year}"),
+    start_year==end_year ~ as.character(start_year),
+    year_type=="limit" | start_fuzzy==TRUE | end_fuzzy==TRUE ~ glue("c. {start_year}-{end_year}"),
+    .default = glue("{start_year}-{end_year}")
+  ))
 
   # mutate(when = if_else(date_type=="point", date1, NA)) |>
   # mutate(notBefore = if_else(date_type=="limit", date1, NA),
@@ -221,14 +223,15 @@ events_xlsx |>
   # add short titles. 
   inner_join(events_short_titles_xlsx |> select(event_id, event_short), by="event_id") |>
   # add dates
-  inner_join(events_dates |> select(event_id, start_year, end_year, year_type), by="event_id")
+  inner_join(events_dates |> select(event_id, start_year, end_year, year_type, display_year), by="event_id")
 
-
+# ignore fuzziness here?
 data_reactable <-
   events_metadata |>
   select(event_id, event, keyword, start_year, end_year, year_type, date_sort) |>
   arrange(date_sort)
 ```
+
 
 
 
@@ -374,10 +377,10 @@ atb_places_geo_event <-
   inner_join(place_tag_table_event, by="place_id") |>
   inner_join(events_metadata, by="event_id") |>
   # should this include fuzziness? it's just so complicated.
-  mutate(display_year = case_when(
-    start_year==end_year ~ as.character(start_year),
-    .default = glue("{start_year}-{end_year}")
-  )) |>
+  # mutate(display_year = case_when(
+  #   start_year==end_year ~ as.character(start_year),
+  #   .default = glue("{start_year}-{end_year}")
+  # )) |>
   mutate(event_link_html = glue("Search DSE for mentions of <a href='https://thornton.kdl.kcl.ac.uk/entities/?hi={event_id}&v=expanded' target='_blank'>this event</a>"))
 ```
 
