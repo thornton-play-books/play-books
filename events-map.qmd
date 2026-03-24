@@ -17,7 +17,7 @@ The map shows places associated with narratives of the 319 [Events](https://thor
 
 *Caveats:* 
 
-- There may be errors. 
+- There may be errors. All places (regardless of actual size) are mapped as single points. 
 - Not all places mentioned in a narrative are equally significant to the event.
 - Conversely, a significant place might not be explicitly mentioned, especially in more brief and fragmentary passages.
 - Places mentioned outside text tagged as Events are not included. 
