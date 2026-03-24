@@ -12,10 +12,15 @@ toc: false
 
 This is an interactive map made by [Sharon Howard](https://sharonhoward.org) for the [Alice Thornton's Books project](https://thornton.kdl.kcl.ac.uk/). 
 
-The map shows places associated with narratives of [Events](https://thornton.kdl.kcl.ac.uk/posts/blog/2022-11-28-tei-events-thornton-books/) tagged by the project, with links to the project's [digital scholarly edition (DSE)](https://thornton.kdl.kcl.ac.uk/edition/?p0.lo=p.1&p0.vi=modern)
+The map shows places associated with narratives of the 319 [Events](https://thornton.kdl.kcl.ac.uk/posts/blog/2022-11-28-tei-events-thornton-books/) tagged by the project, with links to the project's [digital scholarly edition (DSE)](https://thornton.kdl.kcl.ac.uk/edition/?p0.lo=p.1&p0.vi=modern).
 
 
+*Caveats:* 
 
+- There may be errors. 
+- Not all places mentioned in a narrative are equally significant to the event.
+- Conversely, a significant place might not be explicitly mentioned, especially in more brief and fragmentary passages.
+- Places mentioned outside text tagged as Events are not included. 
 
 ```{r}
 
@@ -82,7 +87,7 @@ atb_places_wikidata_xlsx |>
   #left_join(atb_homes |> select(place_id, category, about), by="place_id") |>
   #mutate(category = if_else(!is.na(category), category, "other")) |>
   mutate(atb_places_url = glue("https://thornton.kdl.kcl.ac.uk/entities/?hi=place:{place_id}")) |>
-  mutate(atb_places_link_html = glue("Search edition for mentions of <a href='{atb_places_url}' target='_blank'>{label}</a>")) 
+  mutate(atb_places_link_html = glue("Search DSE for mentions of <a href='{atb_places_url}' target='_blank'>{label}</a>")) 
 
 
 
@@ -373,7 +378,7 @@ atb_places_geo_event <-
     start_year==end_year ~ as.character(start_year),
     .default = glue("{start_year}-{end_year}")
   )) |>
-  mutate(event_link_html = glue("Search edition for mentions of <a href='https://thornton.kdl.kcl.ac.uk/entities/?hi={event_id}&v=expanded' target='_blank'>this event</a>"))
+  mutate(event_link_html = glue("Search DSE for mentions of <a href='https://thornton.kdl.kcl.ac.uk/entities/?hi={event_id}&v=expanded' target='_blank'>this event</a>"))
 ```
 
 
@@ -468,7 +473,6 @@ Features:
 * click on cluster numbers (or zoom in/out) to drill down into areas
 * click on single markers to view event details and texts below the map, with links to the DSE.
 
-(*Caveats:* There may be errors, and not all places are of equal significance to Thornton's narratives.)
 
 
 ```{ojs}
