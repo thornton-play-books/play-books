@@ -49,6 +49,13 @@
     "text": "Table of Events"
   },
   {
+    "objectID": "events-map.html#map-resources",
+    "href": "events-map.html#map-resources",
+    "title": "Mapping Alice Thornton’s Books: Events",
+    "section": "Map Resources",
+    "text": "Map Resources\n\nLeaflet\nLeaflet.markercluster plugin\nLearning Leaflet (Observable Notebook)\nLeaflet with Online GeoJSON and Slider (Observable Notebook with filtering method)\nChicago Homicides Leaflet Map (Observable Notebook with markerclusters)"
+  },
+  {
     "objectID": "about.html",
     "href": "about.html",
     "title": "About",

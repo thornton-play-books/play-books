@@ -900,9 +900,14 @@ reactable(
 
 
 
+## Map Resources
 
 
-
+- [Leaflet](https://leafletjs.com/) 
+- [Leaflet.markercluster plugin](https://github.com/Leaflet/Leaflet.markercluster)
+- [Learning Leaflet](https://observablehq.com/@rahulbot/learning-leaflet) (Observable Notebook)
+- [Leaflet with Online GeoJSON and Slider](https://observablehq.com/d/de61852a430b89e9) (Observable Notebook with filtering method)
+- [Chicago Homicides Leaflet Map](https://observablehq.com/@randomfractals/chicago-homicides-heatmap) (Observable Notebook with markerclusters)
 
 
 
